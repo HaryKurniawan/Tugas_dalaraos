@@ -8,8 +8,8 @@ use App\Filament\Resources\DailyStocks\Pages\ListDailyStocks;
 use App\Models\DailyStock;
 use App\Models\Menu;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Tables\Actions\Action;
@@ -18,15 +18,15 @@ use Filament\Notifications\Notification;
 class DailyStockResource extends Resource
 {
     protected static ?string $model = DailyStock::class;
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static \UnitEnum|string|null $navigationGroup = 'Inventori & Stok';
     protected static ?string $navigationLabel = 'Stok Harian (Dine-in)';
-    protected static ?string $navigationGroup = 'Inventori & Stok';
     protected static ?int $navigationSort = 1;
     protected static ?string $recordTitleAttribute = 'tanggal';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             Forms\Components\Section::make('Input Stok Harian dari Pusat')
                 ->description('Catat jumlah makanan yang dikirim dari Dalaraos Pusat hari ini.')
                 ->schema([

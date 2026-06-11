@@ -5,7 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PesananKateringResource\Pages;
 use App\Models\PesananKatering;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -15,14 +15,14 @@ use Filament\Notifications\Notification;
 class PesananKateringResource extends Resource
 {
     protected static ?string $model = PesananKatering::class;
-    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-clipboard-document-list';
+    protected static \UnitEnum|string|null $navigationGroup = 'Katering';
     protected static ?string $navigationLabel = 'Pesanan Katering';
-    protected static ?string $navigationGroup = 'Katering';
     protected static ?int $navigationSort = 1;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             Forms\Components\Section::make('Data Pemesan')
                 ->schema([
                     Forms\Components\TextInput::make('nama_pelanggan')->label('Nama Pemesan')->required(),

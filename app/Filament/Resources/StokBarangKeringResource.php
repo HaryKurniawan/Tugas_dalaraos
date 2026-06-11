@@ -7,7 +7,7 @@ use App\Models\StokBarangKering;
 use App\Models\Suplier;
 use Carbon\Carbon;
 use Filament\Forms;
-use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -16,14 +16,14 @@ use Filament\Tables\Actions\Action;
 class StokBarangKeringResource extends Resource
 {
     protected static ?string $model = StokBarangKering::class;
-    protected static ?string $navigationIcon = 'heroicon-o-archive-box';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-archive-box';
+    protected static \UnitEnum|string|null $navigationGroup = 'Inventori & Stok';
     protected static ?string $navigationLabel = 'Stok Barang Kering';
-    protected static ?string $navigationGroup = 'Inventori & Stok';
     protected static ?int $navigationSort = 2;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             Forms\Components\Section::make('Informasi Barang')
                 ->schema([
                     Forms\Components\TextInput::make('sku')->label('SKU / Kode Barang')->required()->unique(ignoreRecord: true),

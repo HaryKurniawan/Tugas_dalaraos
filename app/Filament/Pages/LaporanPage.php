@@ -11,7 +11,7 @@ use Carbon\Carbon;
 
 class LaporanPage extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
+    protected static \BackedEnum|string|null $navigationIcon = 'heroicon-o-chart-bar';
     protected static ?string $navigationLabel = 'Laporan';
     protected static ?string $title = 'Laporan Keseluruhan';
     protected static ?int $navigationSort = 10;
