@@ -71,34 +71,39 @@
             @if(isset($pesanan) && $pesanan)
             <div class="animate-fade-in">
                 {{-- Status Timeline --}}
-                <div class="p-4 rounded-3 border mb-4"
-                     style="background: linear-gradient(135deg, #f0fdf4, #fff); border-color: var(--siraos-primary-light) !important;">
-                    <div class="d-flex align-items-start gap-3 mb-3">
-                        <div style="width:42px; height:42px; background:var(--siraos-primary-glass);
-                                    border:1px solid rgba(22,163,74,.2); border-radius:50%;
-                                    display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-                                 fill="none" stroke="var(--siraos-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
-                                <line x1="3" x2="21" y1="6" y2="6"/>
-                                <path d="M16 10a4 4 0 0 1-8 0"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="mb-0 fw-bold" style="font-size:14px; color:var(--gray-900);">
-                                Pesanan #{{ $pesanan->id ?? 'ORD-00001' }}
-                            </p>
-                            <span class="font-mono" style="font-size:10px; color:var(--siraos-muted);">
-                                {{ $pesanan->created_at ?? now() }}
+                <a href="/pesanan/{{ $pesanan->id }}" class="text-decoration-none">
+                    <div class="p-4 rounded-3 border mb-4 shadow-sm hover-card"
+                         style="background: linear-gradient(135deg, #f0fdf4, #fff); border-color: var(--siraos-primary-light) !important; transition: all 0.2s ease;">
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <div style="width:42px; height:42px; background:var(--siraos-primary-glass);
+                                        border:1px solid rgba(22,163,74,.2); border-radius:50%;
+                                        display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                     fill="none" stroke="var(--siraos-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                                    <line x1="3" x2="21" y1="6" y2="6"/>
+                                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="mb-0 fw-bold" style="font-size:14px; color:var(--gray-900);">
+                                    Pesanan #{{ $pesanan->id ?? 'ORD-00001' }}
+                                </p>
+                                <span class="font-mono" style="font-size:10px; color:var(--siraos-muted);">
+                                    {{ $pesanan->created_at ? $pesanan->created_at->format('Y-m-d H:i:s') : now() }}
+                                </span>
+                            </div>
+                            <span class="ms-auto badge rounded-pill px-3 py-2"
+                                  style="background:var(--siraos-primary-glass); color:var(--siraos-primary-dark);
+                                         font-size:10px; font-weight:700; border:1px solid rgba(22,163,74,.2);">
+                                {{ strtoupper($pesanan->status_pesanan ?? 'Menunggu Konfirmasi') }}
                             </span>
                         </div>
-                        <span class="ms-auto badge rounded-pill px-3 py-2"
-                              style="background:var(--siraos-primary-glass); color:var(--siraos-primary-dark);
-                                     font-size:10px; font-weight:700; border:1px solid rgba(22,163,74,.2);">
-                            {{ strtoupper($pesanan->status ?? 'Diproses') }}
-                        </span>
+                        <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top">
+                            <span style="font-size: 11px; color: var(--siraos-muted);">Klik untuk melihat detail pesanan & pembayaran &rarr;</span>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
             @else
             {{-- No result found --}}
@@ -164,6 +169,9 @@
 
     </div>
 </div>
+
+
+
 @endsection
 
 @push('scripts')

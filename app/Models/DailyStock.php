@@ -10,7 +10,7 @@ class DailyStock extends Model
     use HasFactory;
 
     protected $fillable = [
-        'menu_id',
+        'produk_pos_id',
         'tanggal',
         'stok_awal',
         'stok_terjual',
@@ -22,9 +22,9 @@ class DailyStock extends Model
         'tanggal' => 'date',
     ];
 
-    public function menu()
+    public function produkPos()
     {
-        return $this->belongsTo(Menu::class);
+        return $this->belongsTo(ProdukPos::class, 'produk_pos_id');
     }
 
     public function scopeToday($query)

@@ -1,0 +1,162 @@
+@extends('layouts.admin')
+
+@section('title', 'Tambah Produk POS')
+
+@section('content')
+<div class="px-4 sm:px-6 lg:px-8 max-w-4xl">
+
+    {{-- Header --}}
+    <div class="mb-6">
+        <a href="{{ route('admin.produk-pos.index') }}" class="text-sm text-green-600 hover:underline">← Kembali ke Daftar Produk POS</a>
+        <h1 class="text-2xl font-semibold text-gray-900 mt-2">Tambah Produk POS Baru</h1>
+    </div>
+
+    {{-- Error Validation --}}
+    @if($errors->any())
+        <div class="mb-5 bg-red-50 border-l-4 border-red-400 p-4 rounded-md">
+            <p class="text-sm font-semibold text-red-700 mb-1">Terdapat kesalahan input:</p>
+            <ul class="list-disc list-inside text-sm text-red-600 space-y-1">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form action="{{ route('admin.produk-pos.store') }}" method="POST" enctype="multipart/form-data"
+          class="bg-white shadow rounded-lg">
+
+        @csrf
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+
+            {{-- Kolom Kiri: Informasi Produk POS --}}
+            <div class="col-span-2 p-6 space-y-5">
+                <h2 class="text-base font-semibold text-gray-800 border-b pb-2">Informasi Produk POS</h2>
+
+                <div class="grid grid-cols-2 gap-4">
+                    {{-- SKU --}}
+                    <div>
+                        <label for="sku" class="block text-sm font-medium text-gray-700 mb-1">SKU <span class="text-red-500">*</span></label>
+                        <input type="text" id="sku" name="sku" value="{{ old('sku') }}"
+                               placeholder="Contoh: M01"
+                               class="block w-full rounded-md border @error('sku') border-red-400 @else border-gray-300 @enderror px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-green-500">
+                        @error('sku')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    </div>
+
+                    {{-- Nama Produk POS --}}
+                    <div>
+                        <label for="nama_produk" class="block text-sm font-medium text-gray-700 mb-1">Nama Produk POS <span class="text-red-500">*</span></label>
+                        <input type="text" id="nama_produk" name="nama_produk" value="{{ old('nama_produk') }}"
+                               placeholder="Contoh: Paket Nasi Timbel"
+                               class="block w-full rounded-md border @error('nama_produk') border-red-400 @else border-gray-300 @enderror px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-green-500">
+                        @error('nama_produk')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    </div>
+
+                    {{-- Harga --}}
+                    <div>
+                        <label for="harga" class="block text-sm font-medium text-gray-700 mb-1">Harga Jual <span class="text-red-500">*</span></label>
+                        <div class="flex rounded-md shadow-sm">
+                            <span class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 text-sm bg-gray-50">Rp</span>
+                            <input type="number" id="harga" name="harga" value="{{ old('harga') }}"
+                                   placeholder="0" min="0"
+                                   class="block w-full rounded-r-md border @error('harga') border-red-400 @else border-gray-300 @enderror px-3 py-2 text-sm focus:border-green-500 focus:ring-green-500">
+                        </div>
+                        @error('harga')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    </div>
+
+                    {{-- Kategori --}}
+                    <div>
+                        <label for="kategori" class="block text-sm font-medium text-gray-700 mb-1">Kategori <span class="text-red-500">*</span></label>
+                        <select id="kategori" name="kategori"
+                                class="block w-full rounded-md border @error('kategori') border-red-400 @else border-gray-300 @enderror px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-green-500">
+                            <option value="">-- Pilih Kategori --</option>
+                            @foreach(['Dine-in','Minuman','Snack'] as $kat)
+                                <option value="{{ $kat }}" @selected(old('kategori') === $kat)>{{ $kat }}</option>
+                            @endforeach
+                        </select>
+                        @error('kategori')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+
+                {{-- Badge --}}
+                <div>
+                    <label for="badge" class="block text-sm font-medium text-gray-700 mb-1">Badge <span class="text-gray-400 font-normal">(opsional)</span></label>
+                    <input type="text" id="badge" name="badge" value="{{ old('badge') }}"
+                           placeholder="Contoh: Terlaris, Promo"
+                           class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-green-500">
+                </div>
+
+
+
+                {{-- Deskripsi --}}
+                <div>
+                    <label for="deskripsi" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                    <textarea id="deskripsi" name="deskripsi" rows="3"
+                              placeholder="Deskripsi singkat Produk POS..."
+                              class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-green-500">{{ old('deskripsi') }}</textarea>
+                </div>
+            </div>
+
+            {{-- Kolom Kanan: Gambar --}}
+            <div class="p-6 space-y-5">
+                <h2 class="text-base font-semibold text-gray-800 border-b pb-2">Foto Produk POS</h2>
+
+                <div>
+                    <label for="gambar" class="block text-sm font-medium text-gray-700 mb-2">Pilih Metode: Upload atau URL</label>
+                    <div class="mb-4">
+                        <input type="url" id="gambar_url" name="gambar_url" value="{{ old('gambar_url') }}"
+                               placeholder="Atau masukkan URL gambar (https://...)"
+                               class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:ring-green-500 mb-2">
+                        @error('gambar_url')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    </div>
+
+                    <div id="preview-container" class="mb-3 hidden">
+                        <img id="preview-img" src="" alt="Preview" class="w-full rounded-lg object-cover border border-gray-200 max-h-48">
+                    </div>
+                    <label for="gambar"
+                           class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                  d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+                        </svg>
+                        <span class="text-sm text-gray-500">Klik untuk upload file gambar dari komputer</span>
+                        <span class="text-xs text-gray-400 mt-1">JPG, PNG, WEBP maks 2MB (Boleh dikosongkan jika pakai URL)</span>
+                    </label>
+                    <input type="file" id="gambar" name="gambar" accept="image/*" class="hidden"
+                           onchange="previewImage(this)">
+                    @error('gambar')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- Tombol Submit --}}
+        <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex items-center justify-end gap-3 border-t border-gray-100">
+            <a href="{{ route('admin.produk-pos.index') }}"
+               class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
+                Batal
+            </a>
+            <button type="submit"
+                    class="rounded-md bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                Simpan Produk POS
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+function previewImage(input) {
+    const container = document.getElementById('preview-container');
+    const img = document.getElementById('preview-img');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            img.src = e.target.result;
+            container.classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+@endsection

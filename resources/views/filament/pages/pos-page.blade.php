@@ -1,43 +1,56 @@
 <x-filament-panels::page>
-    <div class="flex flex-col md:flex-row gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {{-- LEFT: PRODUCTS SECTION --}}
-        <div class="w-full md:w-2/3 space-y-6">
+        <div class="md:col-span-2 space-y-6">
+            
             {{-- Tabs / Filter --}}
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex gap-4">
-                <button type="button" wire:click="$set('type', 'Dine-in')" class="px-4 py-2 rounded-lg font-bold {{ $type === 'Dine-in' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">Dine-in</button>
-                <button type="button" wire:click="$set('type', 'Take-away')" class="px-4 py-2 rounded-lg font-bold {{ $type === 'Take-away' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">Take-away</button>
-                <button type="button" wire:click="$set('type', 'Keringan')" class="px-4 py-2 rounded-lg font-bold {{ $type === 'Keringan' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700' }}">Barang Kering</button>
-            </div>
+            <x-filament::section>
+                <div class="flex flex-wrap gap-4 items-center">
+                    <x-filament::button 
+                        color="{{ $activeTab === 'Menu' ? 'primary' : 'gray' }}"
+                        wire:click="$set('activeTab', 'Menu')"
+                    >
+                        Menu Makanan
+                    </x-filament::button>
+                    
+                    <x-filament::button 
+                        color="{{ $activeTab === 'Keringan' ? 'primary' : 'gray' }}"
+                        wire:click="$set('activeTab', 'Keringan')"
+                    >
+                        Barang Kering
+                    </x-filament::button>
+                </div>
+            </x-filament::section>
 
             {{-- Products Grid --}}
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                @if($type === 'Dine-in' || $type === 'Take-away')
-                    @forelse($dailyStocks as $stock)
-                        <div wire:click="addToCart('{{ $stock->id }}', 'Menu', '{{ $stock->menu->nama_menu }}', {{ $stock->menu->harga }})" 
-                             class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:border-primary-500 hover:ring-1 hover:ring-primary-500 transition">
-                            <h3 class="font-bold text-sm text-gray-900">{{ $stock->menu->nama_menu }}</h3>
-                            <p class="text-primary-600 font-bold mt-1">Rp {{ number_format($stock->menu->harga, 0, ',', '.') }}</p>
-                            <p class="text-xs text-gray-500 mt-2">Sisa: {{ $stock->stok_sisa }}</p>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                @if($activeTab === 'Menu')
+                    @forelse($menus as $menu)
+                        <div wire:click="addToCart('{{ $menu->id }}', 'Menu', '{{ $menu->nama_menu }}', {{ $menu->harga }})" 
+                             class="fi-ta-record cursor-pointer hover:ring-1 hover:ring-primary-500 rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4 transition duration-200">
+                            <h3 class="font-semibold text-sm text-gray-950 dark:text-white">{{ $menu->nama_menu }}</h3>
+                            <p class="text-primary-600 font-bold mt-1">Rp {{ number_format($menu->harga, 0, ',', '.') }}</p>
+                            <p class="text-xs text-gray-500 mt-2">{{ $menu->kategori }}</p>
                         </div>
                     @empty
-                        <div class="col-span-full p-6 text-center text-gray-500 bg-white rounded-xl border border-dashed">
-                            Belum ada stok harian yang diinput untuk hari ini.
+                        <div class="col-span-full p-6 text-center text-gray-500 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 border-dashed border border-gray-300 dark:border-gray-700">
+                            Belum ada menu yang didaftarkan.
                         </div>
                     @endforelse
                 @else
                     @forelse($keringans as $kering)
                         <div wire:click="addToCart('{{ $kering->id }}', 'Keringan', '{{ $kering->nama_barang }}', {{ $kering->harga_jual }})" 
-                             class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 cursor-pointer hover:border-primary-500 hover:ring-1 hover:ring-primary-500 transition">
-                            <h3 class="font-bold text-sm text-gray-900">{{ $kering->nama_barang }}</h3>
+                             class="fi-ta-record cursor-pointer hover:ring-1 hover:ring-primary-500 rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 p-4 transition duration-200">
+                            <h3 class="font-semibold text-sm text-gray-950 dark:text-white">{{ $kering->nama_barang }}</h3>
                             <p class="text-primary-600 font-bold mt-1">Rp {{ number_format($kering->harga_jual, 0, ',', '.') }}</p>
                             <p class="text-xs text-gray-500 mt-2">Sisa: {{ $kering->jumlah_stok }} {{ $kering->satuan }}</p>
                             @if($kering->tanggal_expired && \Carbon\Carbon::parse($kering->tanggal_expired)->isPast())
-                                <p class="text-xs text-red-600 font-bold mt-1">⚠️ Kadaluarsa!</p>
+                                <x-filament::badge color="danger" class="mt-2">Kadaluarsa!</x-filament::badge>
                             @endif
                         </div>
                     @empty
-                        <div class="col-span-full p-6 text-center text-gray-500 bg-white rounded-xl border border-dashed">
+                        <div class="col-span-full p-6 text-center text-gray-500 bg-white rounded-xl shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10 border-dashed border border-gray-300 dark:border-gray-700">
                             Stok barang kering kosong.
                         </div>
                     @endforelse
@@ -46,60 +59,97 @@
         </div>
 
         {{-- RIGHT: CART SECTION --}}
-        <div class="w-full md:w-1/3">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full" style="min-height: 500px;">
-                <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                    <h2 class="font-bold text-gray-900 text-lg">Keranjang ({{ $type }})</h2>
-                    <span class="bg-primary-100 text-primary-700 text-xs px-2 py-1 rounded-full font-bold">{{ count($cart) }} Item</span>
-                </div>
-                
-                <div class="flex-1 p-4 overflow-y-auto space-y-3">
-                    @forelse($cart as $key => $item)
-                        <div class="flex justify-between items-start pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-                            <div>
-                                <h4 class="font-bold text-sm text-gray-900 leading-tight">{{ $item['name'] }}</h4>
-                                <div class="text-xs text-gray-500 mt-1">Rp {{ number_format($item['price'], 0, ',', '.') }}</div>
-                            </div>
-                            <div class="flex flex-col items-end gap-2">
-                                <div class="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border">
-                                    <button type="button" wire:click="updateQty('{{ $key }}', {{ $item['qty'] - 1 }})" class="w-6 h-6 flex items-center justify-center bg-white border rounded text-gray-600 hover:bg-gray-100">-</button>
-                                    <span class="text-sm font-bold w-6 text-center">{{ $item['qty'] }}</span>
-                                    <button type="button" wire:click="updateQty('{{ $key }}', {{ $item['qty'] + 1 }})" class="w-6 h-6 flex items-center justify-center bg-white border rounded text-gray-600 hover:bg-gray-100">+</button>
-                                </div>
-                                <div class="font-bold text-sm text-gray-900">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="flex flex-col items-center justify-center h-full text-gray-400">
-                            <x-heroicon-o-shopping-cart class="w-12 h-12 mb-2 opacity-50" />
-                            <p>Keranjang masih kosong</p>
-                        </div>
-                    @endforelse
+        <div class="md:col-span-1">
+            <x-filament::section class="h-full flex flex-col" heading="Keranjang Belanja">
+                <x-slot name="headerEnd">
+                    <x-filament::badge color="primary">{{ count($cart) }} Item</x-filament::badge>
+                </x-slot>
+
+                <div class="flex-1 overflow-y-auto max-h-[400px] mb-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="border-b border-gray-200 dark:border-white/10">
+                                <tr>
+                                    <th class="pb-2 font-medium text-gray-500 dark:text-gray-400">Item</th>
+                                    <th class="pb-2 font-medium text-gray-500 dark:text-gray-400 text-center">Qty</th>
+                                    <th class="pb-2 font-medium text-gray-500 dark:text-gray-400 text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-white/10">
+                                @forelse($cart as $key => $item)
+                                    <tr>
+                                        <td class="py-3 pr-2 align-middle">
+                                            <div class="font-medium text-gray-950 dark:text-white leading-snug">{{ $item['name'] }}</div>
+                                            <div class="text-xs text-gray-500 mt-1">Rp {{ number_format($item['price'], 0, ',', '.') }}</div>
+                                        </td>
+                                        <td class="py-3 px-2 text-center align-middle">
+                                            <div class="inline-flex items-center gap-2 bg-gray-50 dark:bg-white/5 rounded-lg p-1 ring-1 ring-gray-950/10 dark:ring-white/20">
+                                                <button type="button" wire:click="updateQty('{{ $key }}', {{ $item['qty'] - 1 }})" class="w-6 h-6 flex items-center justify-center bg-white dark:bg-gray-800 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 font-bold">-</button>
+                                                <span class="text-sm font-bold w-6 text-center dark:text-white">{{ $item['qty'] }}</span>
+                                                <button type="button" wire:click="updateQty('{{ $key }}', {{ $item['qty'] + 1 }})" class="w-6 h-6 flex items-center justify-center bg-white dark:bg-gray-800 rounded shadow-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 font-bold">+</button>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 pl-2 text-right align-middle font-bold text-gray-950 dark:text-white whitespace-nowrap">
+                                            Rp {{ number_format($item['subtotal'], 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="py-10 text-center text-gray-400 dark:text-gray-500">
+                                            <x-heroicon-o-shopping-cart class="mx-auto mb-3 opacity-50" style="width: 3rem; height: 3rem;" />
+                                            <p class="text-sm">Keranjang masih kosong</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl space-y-4">
+                <div class="pt-4 border-t border-gray-200 dark:border-white/10 space-y-4">
+                    
+                    {{-- Tipe Transaksi --}}
                     <div>
-                        <label class="text-xs font-bold text-gray-700 mb-1 block">Metode Pembayaran</label>
-                        <select wire:model="payment_method" class="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500">
-                            <option value="Cash">Tunai (Cash)</option>
-                            <option value="QRIS">QRIS</option>
-                            <option value="Transfer">Transfer Bank</option>
-                        </select>
+                        <label class="text-sm font-medium leading-6 text-gray-950 dark:text-white mb-2 block">Tipe Pemesanan</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button type="button" wire:click="$set('transactionType', 'Dine-in')" class="py-2 text-sm font-semibold rounded-lg ring-1 ring-inset transition-colors {{ $transactionType === 'Dine-in' ? 'bg-primary-50 text-primary-600 ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30' : 'bg-white text-gray-900 ring-gray-300 hover:bg-gray-50 dark:bg-white/5 dark:text-white dark:ring-white/20' }}">
+                                Dine-in
+                            </button>
+                            <button type="button" wire:click="$set('transactionType', 'Take-away')" class="py-2 text-sm font-semibold rounded-lg ring-1 ring-inset transition-colors {{ $transactionType === 'Take-away' ? 'bg-primary-50 text-primary-600 ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/30' : 'bg-white text-gray-900 ring-gray-300 hover:bg-gray-50 dark:bg-white/5 dark:text-white dark:ring-white/20' }}">
+                                Take-away
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Metode Pembayaran --}}
+                    <div>
+                        <label class="text-sm font-medium leading-6 text-gray-950 dark:text-white mb-2 block">Metode Pembayaran</label>
+                        <x-filament::input.wrapper>
+                            <x-filament::input.select wire:model="payment_method">
+                                <option value="Cash">Tunai (Cash)</option>
+                                <option value="QRIS">QRIS</option>
+                                <option value="Transfer">Transfer Bank</option>
+                            </x-filament::input.select>
+                        </x-filament::input.wrapper>
                     </div>
                     
-                    <div class="flex justify-between items-center py-2 border-t border-gray-200 mt-2">
-                        <span class="font-bold text-gray-600">Total Tagihan</span>
-                        <span class="text-2xl font-bold text-primary-600">Rp {{ number_format($this->total, 0, ',', '.') }}</span>
+                    <div class="flex justify-between items-center py-3 border-t border-gray-200 dark:border-white/10 mt-2">
+                        <span class="font-semibold text-gray-950 dark:text-white">Total Tagihan</span>
+                        <span class="text-xl font-bold text-primary-600 dark:text-primary-400">Rp {{ number_format($this->total, 0, ',', '.') }}</span>
                     </div>
 
-                    <button type="button" wire:click="checkout" @if(empty($cart)) disabled @endif
-                            class="w-full py-3 rounded-xl font-bold text-white transition-all {{ empty($cart) ? 'bg-gray-300 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 shadow-md' }}">
+                    <x-filament::button 
+                        wire:click="checkout" 
+                        color="success" 
+                        size="lg" 
+                        class="w-full"
+                        :disabled="empty($cart)"
+                    >
                         Proses Pembayaran
-                    </button>
+                    </x-filament::button>
                 </div>
-            </div>
+            </x-filament::section>
         </div>
-
     </div>
 
     {{-- Script for printing --}}
@@ -113,3 +163,4 @@
             });
         });
     </script>
+</x-filament-panels::page>

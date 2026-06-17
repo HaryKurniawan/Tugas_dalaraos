@@ -2,19 +2,6 @@
 
 @section('content')
 
-@php
-    // Mocking the database fetching for prototype purposes
-    $menu_id = request('menu_id');
-    $menus = [
-        'm8' =>  ['price' => 35000, 'name' => 'Paket Khas Sunda – Timbel Standard', 'img' => 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=150&q=80'],
-        'm9' =>  ['price' => 49000, 'name' => 'Paket Khas Sunda Premium', 'img' => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=150&q=80'],
-        'm10' => ['price' => 35000, 'name' => 'Paket Nasi Putih Standard', 'img' => 'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=150&q=80'],
-        'm12' => ['price' => 42000, 'name' => 'Paket Nasi Tumpeng Kuning', 'img' => 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=150&q=80'],
-    ];
-
-    $selectedMenu = $menu_id && isset($menus[$menu_id]) ? $menus[$menu_id] : null;
-@endphp
-
 <div class="container-fluid p-0 pb-5 mb-5 mx-auto" style="max-width: 800px;">
     
     {{-- Header with Back Button --}}
@@ -26,7 +13,7 @@
     </div>
 
     @if(!$selectedMenu)
-        {{-- Empty State if accessed directly without menu_id --}}
+        {{-- Empty State if accessed directly without valid menu_id --}}
         <div class="bg-white p-5 rounded-4 shadow-sm text-center border">
             <span class="fs-1 mb-3 d-block">🛒</span>
             <h4 class="fw-bold mb-2">Keranjang Kosong</h4>
@@ -37,7 +24,8 @@
 
         <form action="/pesan" method="POST" id="checkoutForm">
             @csrf
-            <input type="hidden" name="menu_id" value="{{ $menu_id }}">
+            <!-- Use actual DB ID for form submission -->
+            <input type="hidden" name="menu_id" value="{{ $selectedMenu->id }}">
 
             {{-- 1. Alamat Pengiriman (Shopee style border) --}}
             <div class="bg-white rounded-3 shadow-sm mb-3 position-relative overflow-hidden">
@@ -61,9 +49,34 @@
                                 <label class="form-label mb-1" style="font-size: 11px; font-weight: 700; color: var(--siraos-muted);">Tanggal Acara <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control form-control-sm" name="tanggal_acara" required>
                             </div>
-                            <div class="col-md-12">
-                                <label class="form-label mb-1" style="font-size: 11px; font-weight: 700; color: var(--siraos-muted);">Alamat Pengiriman (lengkap) <span class="text-danger">*</span></label>
-                                <textarea class="form-control form-control-sm" name="alamat" rows="2" placeholder="Sebutkan alamat lengkap untuk pengiriman / patokan" required></textarea>
+                            <div class="col-md-12" id="alamat_container">
+                                <label class="form-label mb-1 fw-bold" style="font-size: 11px; color: var(--siraos-muted);">Detail Alamat Pengiriman <span class="text-danger">*</span></label>
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <textarea class="form-control form-control-sm" name="alamat" id="alamat_input" rows="2" placeholder="Nama Jalan, RT/RW, Patokan Lengkap" required></textarea>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <select name="kecamatan_id" id="kecamatan_id" class="form-select form-select-sm" style="font-size: 12px;" required onchange="updateCheckout()">
+                                            <option value="" data-name="">— Pilih Kecamatan —</option>
+                                            @if(isset($kecamatans))
+                                                @foreach($kecamatans as $kec)
+                                                    <option value="10000" data-name="{{ $kec->nama }}">{{ $kec->nama }} (Flat Rp 10.000)</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                        <input type="hidden" name="kecamatan_name" id="kecamatan_name">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control form-control-sm font-mono" name="kode_pos" id="kode_pos" placeholder="Kode Pos" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-12" id="info_pickup_container" style="display: none;">
+                                <div class="alert alert-info py-2 mb-0" style="font-size: 11px;">
+                                    <strong>Lokasi Pengambilan:</strong><br>
+                                    Dalaraos Resto, Jl. Contoh Alamat Resto No. 123, Kecamatan, Kota
+                                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 mt-1 d-block" onclick="navigator.clipboard.writeText('Dalaraos Resto, Jl. Contoh Alamat Resto No. 123, Kecamatan, Kota'); alert('Alamat resto berhasil disalin!');">Salin Alamat</button>
+                                </div>
                             </div>
                         </div>
                         <p class="mt-2 mb-0" style="font-size: 10px; color: var(--siraos-muted);">
@@ -81,15 +94,16 @@
                 </p>
                 
                 <div class="d-flex gap-3 align-items-start mb-3 pb-3 border-bottom">
-                    <img src="{{ $selectedMenu['img'] }}" alt="Paket" class="rounded-3 border object-cover" style="width: 70px; height: 70px;">
+                    <img src="{{ str_starts_with($selectedMenu->gambar, 'http') ? $selectedMenu->gambar : Storage::url($selectedMenu->gambar) }}" alt="Paket" class="rounded-3 border object-cover" style="width: 70px; height: 70px;">
                     <div class="flex-grow-1">
-                        <strong class="text-gray-900 d-block" style="font-size: 13px; line-height: 1.3;">{{ $selectedMenu['name'] }}</strong>
+                        <strong class="text-gray-900 d-block" style="font-size: 13px; line-height: 1.3;">{{ $selectedMenu->nama_menu }}</strong>
                         <span class="badge bg-light text-dark border mt-1" style="font-size: 9px;">Pre-Order H-1</span>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <span class="font-mono fw-bold text-siraos-primary-dark" style="font-size: 13px;" id="pricePerItem">Rp {{ number_format($selectedMenu['price'], 0, ',', '.') }}</span>
-                            <div class="d-flex align-items-center">
+                            <span class="font-mono fw-bold text-siraos-primary-dark" style="font-size: 13px;" id="pricePerItem">Rp {{ number_format($selectedMenu->harga, 0, ',', '.') }}</span>
+                            <div class="d-flex align-items-center gap-1">
                                 <span class="text-muted me-2" style="font-size: 11px;">Jumlah:</span>
                                 <input type="number" class="form-control form-control-sm font-mono text-center fw-bold" style="width: 70px;" name="jumlah_porsi" id="jumlah_porsi" value="50" min="1" onchange="updateCheckout()">
+                                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" onclick="updateCheckout()">Oke</button>
                             </div>
                         </div>
                     </div>
@@ -98,17 +112,26 @@
                 {{-- Opsi Pengiriman --}}
                 <div>
                     <label class="fw-bold mb-2 text-gray-900" style="font-size: 12px;">Opsi Pengiriman <span class="text-danger">*</span></label>
-                    <div class="row g-2">
-                        <div class="col-md-6" id="shipping_normal_container">
+                    <div class="row g-2" id="shipping_options_container">
+                        <div class="col-md-4" id="opt_internal">
+                            <label class="radio-card-wrapper w-100 m-0 py-2 px-3" id="label_internal">
+                                <input type="radio" name="metode_kirim" value="internal" class="form-check-input mt-0" onchange="updateCheckout()">
+                                <div>
+                                    <strong class="radio-card-label-title" style="font-size: 11px;">🚚 Diantar Dalaraos</strong>
+                                    <span class="radio-card-label-sub" style="font-size: 9px;">Sesuai Kecamatan</span>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-md-4" id="opt_gosend">
                             <label class="radio-card-wrapper active w-100 m-0 py-2 px-3" id="label_gosend">
                                 <input type="radio" name="metode_kirim" value="gosend" class="form-check-input mt-0" checked onchange="updateCheckout()">
                                 <div>
                                     <strong class="radio-card-label-title" style="font-size: 11px;">🛵 GoSend (Instan)</strong>
-                                    <span class="radio-card-label-sub" style="font-size: 9px;">Bayar ongkir di tempat</span>
+                                    <span class="radio-card-label-sub" style="font-size: 9px;">Ongkir manual admin</span>
                                 </div>
                             </label>
                         </div>
-                        <div class="col-md-6" id="shipping_ambil_container">
+                        <div class="col-md-4" id="opt_ambil">
                             <label class="radio-card-wrapper w-100 m-0 py-2 px-3" id="label_ambil">
                                 <input type="radio" name="metode_kirim" value="ambil_sendiri" class="form-check-input mt-0" onchange="updateCheckout()">
                                 <div>
@@ -119,27 +142,20 @@
                         </div>
                     </div>
 
-                    <div id="shipping_internal" class="internal-shipping-banner d-none mt-2 p-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-success" style="font-size: 9px;">Wajib</span>
-                            <span class="text-success fw-bold" style="font-size: 11px;">Kurir Internal Dalaraos</span>
+                    <div id="shipping_internal_banner" class="internal-shipping-banner d-none mt-2 p-2">
+                        <div id="mobil_box_badge">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-success" style="font-size: 9px;">Wajib</span>
+                                <span class="text-success fw-bold" style="font-size: 11px;">Mobil Box Dalaraos</span>
+                            </div>
+                            <p class="mb-0 mt-1" style="font-size: 10px; color: var(--siraos-muted);">Pesanan >70 porsi wajib diantar menggunakan armada mobil box internal kami.</p>
                         </div>
-                        <p class="mb-0 mt-1" style="font-size: 10px; color: var(--siraos-muted);">Pesanan dalam jumlah besar (>70 porsi) wajib diantar menggunakan armada internal kami.</p>
-                        
-                        <select name="kecamatan_id" id="kecamatan_id" class="form-select form-select-sm mt-2" style="font-size: 11px;" onchange="updateCheckout()">
-                            <option value="" data-name="">— Pilih Wilayah Pengiriman —</option>
-                            <option value="15000" data-name="Andir">Andir (Rp 15.000)</option>
-                            <option value="15000" data-name="Antapani">Antapani (Rp 15.000)</option>
-                            <option value="20000" data-name="Buah Batu">Buah Batu (Rp 20.000)</option>
-                            <option value="25000" data-name="Cibiru">Cibiru (Rp 25.000)</option>
-                        </select>
-                        <input type="hidden" name="kecamatan_name" id="kecamatan_name">
                     </div>
                 </div>
             </div>
 
             {{-- 3. Dessert Tambahan --}}
-            <div class="bg-white rounded-3 shadow-sm mb-3 p-3 p-md-4 border">
+            <div class="bg-white rounded-3 shadow-sm mb-3 p-3 p-md-4 border" id="dessert_section_container">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <p class="fw-bold mb-0 d-flex align-items-center gap-2" style="font-size: 14px;">
                         <span class="fs-5">🍨</span> Tambahan Dessert
@@ -148,34 +164,25 @@
                 </div>
 
                 <div class="row g-2">
-                    <div class="col-6 col-md-3">
-                        <div class="border rounded-3 p-2 text-center" style="background: #f9fafb;">
-                            <span class="d-block" style="font-size: 11px; font-weight: 700;">🍰 Kue Sarikaya</span>
-                            <span class="font-mono text-siraos-amber-dark" style="font-size: 9px;">Rp 5.000</span>
-                            <input type="number" name="sarikaya_qty" id="sarikaya_qty" class="form-control form-control-sm mt-1 text-center" min="0" value="0" onchange="updateCheckout()">
+                    @foreach($desserts as $ds)
+                    <div class="col-6 col-md-3 d-none" id="dessert_col_{{ $ds->id }}">
+                        <div class="border rounded-3 p-2 text-center" style="background: #f9fafb; position: relative;">
+                            @if($ds->gambar)
+                                <img src="{{ str_starts_with($ds->gambar, 'http') ? $ds->gambar : Storage::url($ds->gambar) }}" alt="{{ $ds->nama_menu }}" class="w-100 object-cover mb-2 rounded-2" style="height: 60px;">
+                            @else
+                                <div class="w-100 mb-2 rounded-2 bg-white border d-flex align-items-center justify-content-center text-muted" style="height: 60px; font-size: 10px;">{{ explode(' ', $ds->badge)[0] ?? '🍨' }}</div>
+                            @endif
+                            <span class="d-block text-truncate" style="font-size: 11px; font-weight: 700;" title="{{ $ds->nama_menu }}">{{ $ds->nama_menu }}</span>
+                            <span class="font-mono text-siraos-amber-dark" style="font-size: 9px;">Rp {{ number_format($ds->harga, 0, ',', '.') }}</span>
+                            
+                            <div class="mt-2 text-start">
+                                <label style="font-size: 9px; color: var(--gray-500);">Jumlah Porsi:</label>
+                                <!-- Kita gunakan ID dinamis untuk dessert -->
+                                <input type="number" name="desserts[{{ $ds->id }}]" id="dessert_{{ $ds->id }}" class="form-control form-control-sm text-center dessert-input" min="0" value="0" data-price="{{ $ds->harga }}" onchange="updateCheckout()">
+                            </div>
                         </div>
                     </div>
-                    <div class="col-6 col-md-3">
-                        <div class="border rounded-3 p-2 text-center" style="background: #f9fafb;">
-                            <span class="d-block" style="font-size: 11px; font-weight: 700;">🍮 Pudding Fla</span>
-                            <span class="font-mono text-siraos-amber-dark" style="font-size: 9px;">Rp 6.000</span>
-                            <input type="number" name="puding_coklat_qty" id="puding_coklat_qty" class="form-control form-control-sm mt-1 text-center" min="0" value="0" onchange="updateCheckout()">
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="border rounded-3 p-2 text-center" style="background: #f9fafb;">
-                            <span class="d-block" style="font-size: 11px; font-weight: 700;">🍊 Jeruk Segar</span>
-                            <span class="font-mono text-siraos-amber-dark" style="font-size: 9px;">Rp 5.000</span>
-                            <input type="number" name="jeruk_qty" id="jeruk_qty" class="form-control form-control-sm mt-1 text-center" min="0" value="0" onchange="updateCheckout()">
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="border rounded-3 p-2 text-center" style="background: #f9fafb;">
-                            <span class="d-block" style="font-size: 11px; font-weight: 700;">🍌 Pisang</span>
-                            <span class="font-mono text-siraos-amber-dark" style="font-size: 9px;">Rp 2.500</span>
-                            <input type="number" name="pisang_qty" id="pisang_qty" class="form-control form-control-sm mt-1 text-center" min="0" value="0" onchange="updateCheckout()">
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
             </div>
 
@@ -231,13 +238,7 @@
 
 @push('scripts')
 <script>
-    const basePrice = {{ $selectedMenu ? $selectedMenu['price'] : 0 }};
-    const dessertPrices = {
-        sarikaya_qty: 5000,
-        puding_coklat_qty: 6000,
-        jeruk_qty: 5000,
-        pisang_qty: 2500
-    };
+    const basePrice = {{ $selectedMenu ? $selectedMenu->harga : 0 }};
 
     function fmt(n) {
         return 'Rp ' + n.toLocaleString('id-ID');
@@ -249,51 +250,87 @@
         const qty = parseInt(document.getElementById('jumlah_porsi').value) || 0;
         const subtotal = basePrice * qty;
 
-        // Dessert calculation
+        // Dessert calculation dinamis
         let dessertTotal = 0;
-        Object.entries(dessertPrices).forEach(([id, price]) => {
-            const el = document.getElementById(id);
-            if (el) dessertTotal += (parseInt(el.value) || 0) * price;
+        document.querySelectorAll('.dessert-input').forEach(input => {
+            const price = parseInt(input.getAttribute('data-price')) || 0;
+            const q = parseInt(input.value) || 0;
+            dessertTotal += price * q;
         });
 
         // Shipping logic
-        const isInternal = qty >= 70;
+        const isInternalForced = qty > 70;
         let shippingCost = 0;
         let shippingText = 'Rp 0';
 
-        if (isInternal) {
-            document.getElementById('shipping_normal_container').classList.add('d-none');
-            document.getElementById('shipping_ambil_container').classList.add('d-none');
-            document.getElementById('shipping_internal').classList.remove('d-none');
-            document.getElementById('kecamatan_id').required = true;
+        if (isInternalForced) {
+            // Force internal selection
+            document.querySelector('input[name="metode_kirim"][value="internal"]').checked = true;
+            document.getElementById('opt_internal').classList.remove('d-none');
+            document.getElementById('opt_gosend').classList.add('d-none');
+            document.getElementById('opt_ambil').classList.add('d-none');
+            document.getElementById('mobil_box_badge').classList.remove('d-none');
+        } else {
+            // Allow gosend and ambil sendiri, hide internal
+            if (document.querySelector('input[name="metode_kirim"]:checked').value === 'internal') {
+                document.querySelector('input[name="metode_kirim"][value="gosend"]').checked = true;
+            }
+            document.getElementById('opt_internal').classList.add('d-none');
+            document.getElementById('opt_gosend').classList.remove('d-none');
+            document.getElementById('opt_ambil').classList.remove('d-none');
+            document.getElementById('mobil_box_badge').classList.add('d-none');
+        }
+
+        const method = document.querySelector('input[name="metode_kirim"]:checked').value;
+
+        // UI Toggle
+        document.getElementById('label_internal').classList.toggle('active', method === 'internal');
+        document.getElementById('label_gosend').classList.toggle('active', method === 'gosend');
+        document.getElementById('label_ambil').classList.toggle('active', method === 'ambil_sendiri');
+
+        if (method === 'internal') {
+            document.getElementById('shipping_internal_banner').classList.remove('d-none');
+            
+            // Check if address container is visible, require the dropdown
+            if(document.getElementById('alamat_container').style.display !== 'none') {
+                document.getElementById('kecamatan_id').required = true;
+            }
 
             const kecSelect = document.getElementById('kecamatan_id');
             const kecVal = kecSelect.value;
-            if (kecVal) {
+            if (kecVal && kecSelect.selectedIndex > 0) {
                 shippingCost = parseInt(kecVal);
                 shippingText = fmt(shippingCost);
                 document.getElementById('kecamatan_name').value = kecSelect.options[kecSelect.selectedIndex].getAttribute('data-name');
             } else {
-                shippingText = 'Pilih Wilayah';
+                shippingText = 'Pilih Wilayah di Atas';
                 document.getElementById('kecamatan_name').value = '';
             }
         } else {
-            document.getElementById('shipping_normal_container').classList.remove('d-none');
-            document.getElementById('shipping_ambil_container').classList.remove('d-none');
-            document.getElementById('shipping_internal').classList.add('d-none');
+            document.getElementById('shipping_internal_banner').classList.add('d-none');
+            // If it's not internal delivery, the shipping cost via our system is 0 (handled manually by admin for gosend)
             document.getElementById('kecamatan_id').required = false;
 
-            const isGosend = document.querySelector('input[name="metode_kirim"][value="gosend"]').checked;
-            
-            // UI Toggle
-            document.getElementById('label_gosend').classList.toggle('active', isGosend);
-            document.getElementById('label_ambil').classList.toggle('active', !isGosend);
-
-            if (isGosend) {
-                shippingText = 'Bayar di tujuan (GoSend)';
+            if (method === 'gosend') {
+                shippingText = 'Ongkir manual admin (GoSend)';
             } else {
                 shippingText = 'Gratis (Ambil Sendiri)';
             }
+        }
+
+        // Address Field Visibility
+        if (method === 'ambil_sendiri' || method === 'gosend') {
+            document.getElementById('alamat_container').style.display = 'none';
+            document.getElementById('alamat_input').required = false;
+            document.getElementById('kecamatan_id').required = false;
+            document.getElementById('kode_pos').required = false;
+            document.getElementById('info_pickup_container').style.display = 'block';
+        } else {
+            document.getElementById('alamat_container').style.display = 'block';
+            document.getElementById('alamat_input').required = true;
+            document.getElementById('kecamatan_id').required = true;
+            document.getElementById('kode_pos').required = true;
+            document.getElementById('info_pickup_container').style.display = 'none';
         }
 
         const grandTotal = subtotal + dessertTotal + shippingCost;
@@ -317,6 +354,56 @@
 
     // Init calculation on load
     document.addEventListener("DOMContentLoaded", function() {
+        // Load saved user info
+        const savedName = localStorage.getItem('siraos_nama');
+        const savedPhone = localStorage.getItem('siraos_no_wa');
+        const savedAddress = localStorage.getItem('siraos_alamat');
+        const savedKodePos = localStorage.getItem('siraos_kode_pos');
+
+        if (savedName) document.querySelector('input[name="nama_pemesan"]').value = savedName;
+        if (savedPhone) document.querySelector('input[name="no_wa"]').value = savedPhone;
+        if (savedAddress) document.querySelector('textarea[name="alamat"]').value = savedAddress;
+        if (savedKodePos) document.querySelector('input[name="kode_pos"]').value = savedKodePos;
+
+        // Save user info on input
+        document.querySelector('input[name="nama_pemesan"]').addEventListener('input', function(e) {
+            localStorage.setItem('siraos_nama', e.target.value);
+        });
+        document.querySelector('input[name="no_wa"]').addEventListener('input', function(e) {
+            localStorage.setItem('siraos_no_wa', e.target.value);
+        });
+        document.querySelector('textarea[name="alamat"]').addEventListener('input', function(e) {
+            localStorage.setItem('siraos_alamat', e.target.value);
+        });
+        document.querySelector('input[name="kode_pos"]').addEventListener('input', function(e) {
+            localStorage.setItem('siraos_kode_pos', e.target.value);
+        });
+
+        // Load existing dessert cart if any
+        let hasDessert = false;
+        try {
+            const savedDs = localStorage.getItem('siraos_dessert_cart');
+            if(savedDs) {
+                const dc = JSON.parse(savedDs);
+                for(let id in dc) {
+                    let el = document.getElementById('dessert_' + id);
+                    if(el) {
+                        let qty = parseInt(dc[id]) || 0;
+                        if(qty > 0) {
+                            el.value = qty;
+                            let col = document.getElementById('dessert_col_' + id);
+                            if(col) col.classList.remove('d-none');
+                            hasDessert = true;
+                        }
+                    }
+                }
+            }
+        } catch(e) {}
+        
+        if(!hasDessert) {
+            document.getElementById('dessert_section_container').style.display = 'none';
+        }
+
         updateCheckout();
 
         // Load saved menu options from localStorage

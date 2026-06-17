@@ -147,6 +147,44 @@
         <div class="mt-4 text-center p-3 rounded-4" style="background: rgba(22,163,74,.05); border: 1px dashed rgba(22,163,74,.3);">
              <p class="mb-0 text-siraos-primary fw-bold" style="font-size: 13px;">👆 Pilih salah satu paket di atas untuk mulai memesan</p>
         </div>
+
+        {{-- ===== DESSERT SECTION ===== --}}
+        @if(isset($desserts) && count($desserts) > 0)
+        <div class="mt-5 pt-4 border-top">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-gray-900 mb-1" style="font-size: 1.4rem;">🍨 Tambahan Dessert</h2>
+                    <p class="text-muted mb-0" style="font-size: 13px;">Sempurnakan hidangan dengan yang manis. <span class="text-danger fw-bold">*Hanya dapat di-checkout bersama paket katering.</span></p>
+                </div>
+            </div>
+
+            <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+                @foreach($desserts as $ds)
+                <div class="col">
+                    <div class="siraos-card h-100 p-2 text-center" style="cursor: default;">
+                        @if($ds->gambar)
+                            <img src="{{ str_starts_with($ds->gambar, 'http') ? $ds->gambar : Storage::url($ds->gambar) }}" alt="{{ $ds->nama_menu }}" class="w-100 object-cover mb-2 rounded-3" style="height: 120px;">
+                        @else
+                            <div class="w-100 mb-2 rounded-3 bg-gray-100 border d-flex align-items-center justify-content-center text-muted" style="height: 120px; font-size: 24px;">{{ explode(' ', $ds->badge)[0] ?? '🍨' }}</div>
+                        @endif
+                        
+                        <h5 class="fw-bold text-gray-800 mb-1" style="font-size: 14px;">{{ $ds->nama_menu }}</h5>
+                        <p class="font-mono text-siraos-amber-dark fw-bold mb-2" style="font-size: 12px;">Rp {{ number_format($ds->harga, 0, ',', '.') }}</p>
+                        
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-siraos-primary w-100 rounded-pill fw-bold" style="font-size: 12px;" onclick="openDessertModal({{ $ds->id }}, '{{ addslashes($ds->nama_menu) }}')">
+                                + Tambahkan
+                            </button>
+                        </div>
+                        <!-- We still need a visual indicator if they added it -->
+                        <span class="badge bg-success position-absolute top-0 end-0 m-2 d-none" id="badge_ds_{{ $ds->id }}" style="font-size: 10px;">0 di Keranjang</span>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
     </div>
 </div>
 
@@ -167,6 +205,31 @@
       </div>
       <div class="modal-footer border-top p-3">
         <button type="button" class="btn btn-siraos-dark w-100 rounded-pill py-2" onclick="saveMenuOptions()">Simpan Pilihan &amp; Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- ===== DESSERT QUANTITY MODAL ===== --}}
+<div class="modal fade" id="dessertQtyModal" tabindex="-1" aria-labelledby="dessertQtyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow rounded-4">
+      <div class="modal-header border-bottom-0 pb-0 mt-2">
+        <h5 class="modal-title fw-bold text-gray-900" id="dessertQtyModalLabel" style="font-size: 16px;">Tentukan Jumlah</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center pt-2">
+         <p class="text-muted mb-4" style="font-size: 13px;" id="dessertModalName">Nama Dessert</p>
+         
+         <div class="d-flex justify-content-center align-items-center gap-3 mb-3">
+            <button type="button" class="btn btn-outline-secondary rounded-circle p-0" style="width: 36px; height: 36px; font-size: 18px;" onclick="changeModalQty(-1)">-</button>
+            <input type="number" id="modalDessertQty" class="form-control text-center fw-bold font-mono" style="width: 70px; font-size: 16px;" value="1" min="0" readonly>
+            <button type="button" class="btn btn-siraos-primary rounded-circle p-0" style="width: 36px; height: 36px; font-size: 18px;" onclick="changeModalQty(1)">+</button>
+         </div>
+      </div>
+      <div class="modal-footer border-top p-3">
+        <input type="hidden" id="modalDessertId">
+        <button type="button" class="btn btn-siraos-dark w-100 rounded-pill py-2" onclick="confirmDessertQty()">Konfirmasi</button>
       </div>
     </div>
   </div>
@@ -211,9 +274,23 @@
     let selectedMenuId = null;
     let tempSelectedMenu = null;
     let menuDetailModal = null;
+    let dessertQtyModal = null;
+    let dessertCart = {};
 
     document.addEventListener("DOMContentLoaded", function() {
         menuDetailModal = new bootstrap.Modal(document.getElementById('menuDetailModal'));
+        dessertQtyModal = new bootstrap.Modal(document.getElementById('dessertQtyModal'));
+        
+        // Load existing dessert cart if any
+        try {
+            const saved = localStorage.getItem('siraos_dessert_cart');
+            if(saved) {
+                dessertCart = JSON.parse(saved);
+                for(let id in dessertCart) {
+                    updateDessertBadge(id, dessertCart[id]);
+                }
+            }
+        } catch(e) {}
     });
 
     const packageOptionsData = {
@@ -285,10 +362,12 @@
 
         document.querySelectorAll('.siraos-card').forEach(card => {
             card.classList.remove('active');
-            card.querySelector('.btn-select-pkg').textContent = 'Pilih Paket Ini';
+            let btn = card.querySelector('.btn-select-pkg');
+            if(btn) btn.textContent = 'Pilih Paket Ini';
         });
         tempSelectedMenu.el.classList.add('active');
-        tempSelectedMenu.el.querySelector('.btn-select-pkg').textContent = '✓ Terpilih';
+        let tempBtn = tempSelectedMenu.el.querySelector('.btn-select-pkg');
+        if(tempBtn) tempBtn.textContent = '✓ Terpilih';
 
         // Show floating cart
         const floatingCart = document.getElementById('floating-cart');
@@ -297,6 +376,75 @@
 
         // Close modal
         menuDetailModal.hide();
+    }
+
+    function updateDessertBadge(id, qty) {
+        let badge = document.getElementById('badge_ds_' + id);
+        if(badge) {
+            if(qty > 0) {
+                badge.textContent = qty + ' di Keranjang';
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        }
+    }
+
+    function openDessertModal(id, name) {
+        document.getElementById('modalDessertId').value = id;
+        document.getElementById('dessertModalName').textContent = name;
+        
+        let currentQty = dessertCart[id] || 1; 
+        if (currentQty === 0) currentQty = 1; // Default to 1 if they open it and it was 0
+        document.getElementById('modalDessertQty').value = currentQty;
+        
+        dessertQtyModal.show();
+    }
+
+    function changeModalQty(delta) {
+        let input = document.getElementById('modalDessertQty');
+        let val = parseInt(input.value) || 0;
+        val += delta;
+        if(val < 0) val = 0;
+        input.value = val;
+    }
+
+    function confirmDessertQty() {
+        let id = document.getElementById('modalDessertId').value;
+        let qty = parseInt(document.getElementById('modalDessertQty').value) || 0;
+        
+        dessertCart[id] = qty;
+        localStorage.setItem('siraos_dessert_cart', JSON.stringify(dessertCart));
+        
+        updateDessertBadge(id, qty);
+        
+        dessertQtyModal.hide();
+        
+        // Show notification
+        if(!selectedMenuId && qty > 0) {
+            const Toast = Swal.mixin({
+              toast: true,
+              position: "top-end",
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
+            });
+            Toast.fire({
+              icon: "success",
+              title: "Dessert ditambahkan! Silakan pilih paket katering utama untuk checkout."
+            });
+        } else if (qty === 0) {
+            const Toast = Swal.mixin({
+              toast: true,
+              position: "top-end",
+              showConfirmButton: false,
+              timer: 2000,
+            });
+            Toast.fire({
+              icon: "info",
+              title: "Dessert dihapus dari keranjang."
+            });
+        }
     }
 
     function goToCheckout() {

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('daily_stocks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('menu_id')->constrained('menus')->cascadeOnDelete();
+            $table->foreignId('produk_pos_id')->constrained('produk_pos')->cascadeOnDelete();
             $table->date('tanggal');
             $table->integer('stok_awal')->default(0);
             $table->integer('stok_terjual')->default(0);
